@@ -1,0 +1,9 @@
+parameters:
+    level: max
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - src
+        - tests
+        - bin
+    scanFiles:
+        - stubs/tideways_xhprof.php

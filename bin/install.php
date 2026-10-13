@@ -1,15 +1,13 @@
 <?php
-/**
- * @maintainer Timur Shagiakhmetov <timur.shagiakhmetov@corp.badoo.com>
- */
 
-if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-    require_once __DIR__ . '/../vendor/autoload.php';
-} elseif (file_exists(__DIR__ . '/../../../../vendor/autoload.php')) {
-    require_once __DIR__ . '/../../../../vendor/autoload.php';
-}
+declare(strict_types=1);
+
+/*
+ * Creates the "details" table in the database of the LIVE_PROFILER_CONNECTION_URL environment variable.
+ */
 
 use Badoo\LiveProfiler\LiveProfiler;
 
-$Profiler = new LiveProfiler();
-$Profiler->createTable();
+require __DIR__ . '/bootstrap.php';
+
+exit((new LiveProfiler())->createTable() ? 0 : 1);

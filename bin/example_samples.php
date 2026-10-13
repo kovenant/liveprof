@@ -1,81 +1,35 @@
 <?php
-/**
- * Runs profiling test code
- * @maintainer Timur Shagiakhmetov <timur.shagiakhmetov@corp.badoo.com>
- */
 
-if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-    require_once __DIR__ . '/../vendor/autoload.php';
-} elseif (file_exists(__DIR__ . '/../../../../vendor/autoload.php')) {
-    require_once __DIR__ . '/../../../../vendor/autoload.php';
-}
+declare(strict_types=1);
+
+/*
+ * Profiles the test code with xhprof in the sampling mode and saves the profile into an SQLite database in memory.
+ */
 
 use Badoo\LiveProfiler\LiveProfiler;
 
-// Create source database in the memory
-$Profiler = new LiveProfiler('sqlite:///:memory:');
-$Profiler->setDivider(1);
-$Profiler->createTable();
-$Profiler->useXhprofSample();
+require __DIR__ . '/bootstrap.php';
+require __DIR__ . '/example_workload.php';
 
-// Run this method before profiled code
-$Profiler->start();
+if (!function_exists('xhprof_sample_enable')) {
+    fwrite(\STDERR, "The xhprof extension is required for the sampling mode\n");
+    exit(1);
+}
 
-// Start of profiled code
+$profiler = new LiveProfiler('sqlite:///:memory:');
+$profiler->setDivider(1);
+$profiler->createTable();
+$profiler->useXhprofSample();
+
+// Run this method before the profiled code
+$profiler->start();
+
 testCode(1);
-// End of profiled code
+usleep(100000);
+getSlower(1);
 
-// Run this method after profiled code
-$profiling_result = $Profiler->end();
-print_r($Profiler->getLastProfileData());
+// Run this method after the profiled code, otherwise it is called on shutdown
+$result = $profiler->end();
+print_r($profiler->getLastProfileData());
 
-echo $profiling_result ? "Profiling successfully finished\n" : "Error in profiling\n";
-
-/**
- * Test functions
- * @param int $level
- */
-function testCode($level = 2)
-{
-    getSlower($level);
-
-    for ($i = 0; $i < (10 - $level); $i++) {
-        for ($j = 0; $j < 1000000; $j++) {
-            $result = $i * (1000000 - $i);
-        }
-    }
-
-    getFaster($level);
-    usleep(100000);
-    getSlower($level);
-}
-
-/**
- * @param int $level
- * @return float
- */
-function getSlower($level)
-{
-    $result = 0;
-    for ($i = 0; $i < $level; $i++) {
-        for ($j = 0; $j < 1000000; $j++) {
-            $result = $j * (1000000 - $j);
-        }
-    }
-    return $result;
-}
-
-/**
- * @param int $level
- * @return float
- */
-function getFaster($level)
-{
-    $result = 0;
-    for ($i = 0; $i < (10 - $level); $i++) {
-        for ($j = 0; $j < 1000000; $j++) {
-            $result = $i * (1000000 - $i);
-        }
-    }
-    return $result;
-}
+echo $result ? "Profiling successfully finished\n" : "Error in profiling\n";

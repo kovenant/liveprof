@@ -1,13 +1,13 @@
-FROM php:5.4
-MAINTAINER Timur Shagiakhmetov <timur.shagiakhmetov@corp.badoo.com>
+FROM php:8.3-cli
 
-COPY . /app
+# xhprof profiler installation
+RUN pecl install xhprof && docker-php-ext-enable xhprof
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 WORKDIR /app
+COPY composer.json ./
+RUN composer install --no-dev --no-interaction --no-progress
+COPY . .
 
-RUN apt-get update && apt-get install -y --no-install-recommends git unzip \
-&& curl --silent --show-error https://getcomposer.org/installer | php \
-&& ./composer.phar -q update \
-&& echo 'date.timezone = Europe/London' >> /usr/local/etc/php/php.ini \
-&& pecl install xhprof-0.9.4 && docker-php-ext-enable xhprof # xhprof profiler installation
-
-CMD ["php", "/app/bin/example_save_to_file.php"]
+CMD ["php", "bin/example.php"]
